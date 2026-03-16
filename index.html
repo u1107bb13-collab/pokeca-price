@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポケカ相場サイト</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; background: #f0f4ff; color: #333; }
+    header { background: #e63946; color: white; padding: 20px; text-align: center; }
+    header h1 { font-size: 2rem; }
+    .search-box { text-align: center; margin: 30px; }
+    .search-box input { padding: 10px; width: 300px; font-size: 1rem; border: 2px solid #ccc; border-radius: 8px; }
+    .search-box button { padding: 10px 20px; font-size: 1rem; background: #e63946; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px; }
+    .search-box button:hover { background: #c1121f; }
+    .results { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+    .card { background: white; border-radius: 12px; padding: 15px; width: 200px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .card img { width: 100%; border-radius: 8px; }
+    .card h3 { margin-top: 10px; font-size: 0.9rem; }
+    .card .price { color: #e63946; font-weight: bold; margin-top: 5px; }
+    .loading { text-align: center; font-size: 1.2rem; margin: 20px; display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎴 ポケカ相場サイト</h1>
+    <p>カード名を入力して相場を調べよう</p>
+  </header>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="例: ピカチュウ, リザードン">
+    <button onclick="searchCards()">検索</button>
+  </div>
+
+  <div class="loading" id="loading">検索中...</div>
+  <div class="results" id="results"></div>
+
+  <script>
+    async function searchCards() {
+      const query = document.getElementById('searchInput').value;
+      if (!query) return;
+
+      const loading = document.getElementById('loading');
+      const results = document.getElementById('results');
+      loading.style.display = 'block';
+      results.innerHTML = '';
+
+      try {
+        const res = await fetch(`https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(query)}`);
+        const cards = await res.json();
+
+        loading.style.display = 'none';
+
+        if (!cards.length) {
+          results.innerHTML = '<p>カードが見つかりませんでした</p>';
+          return;
+        }
+
+        cards.slice(0, 12).forEach(card => {
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = `
+            <img src="${card.image ? card.image + '/low.webp' : 'https://via.placeholder.com/150'}" alt="${card.name}">
+            <h3>${card.name}</h3>
+            <p class="price">相場: データなし</p>
+          `;
+          results.appendChild(div);
+        });
+      } catch (e) {
+        loading.style.display = 'none';
+        results.innerHTML = '<p>エラーが発生しました。もう一度試してください。</p>';
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') searchCards();
+    });
+  </script>
+</body>
+</html>
